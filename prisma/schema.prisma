@@ -5,16 +5,48 @@ datasource db {
 
 // TODO: define fields and relations
 model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  firstName String
+  lastName  String
+  social    Json
+  courses   Course[]
 }
 
 // TODO: define fields and relations
 model Course {
+  id            Int    @id @default(autoincrement())
+  name          String
+  courseDetails String
+  members       User[]
+}
+
+model CourseEnrollment {
+  createdAt DateTime @default(now())
+  role      UserRole
+
+  userId   Int
+  courseId Int
+
+  
+}
+
+enum UserRole {
+  STUDENT
+  TEACHER
 }
 
 // TODO: define fields and relations
 model Test {
+  id        Int      @id @default(autoincrement())
+  updatedAt DateTime @updatedAt
+  name      String
+  date      DateTime
 }
 
 // TODO: define fields and relations
 model TestResult {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  result    Int
 }
