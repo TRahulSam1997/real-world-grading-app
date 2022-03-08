@@ -1,3 +1,8 @@
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["aggregateApi"]
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -5,12 +10,15 @@ datasource db {
 
 // TODO: define fields and relations
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
+  id        Int    @id @default(autoincrement())
+  email     String @unique
   firstName String
   lastName  String
   social    Json
-  courses   Course[]
+
+  courses     CourseEnrollment[]
+  testResults TestResult[]       @relation(name: "results")
+  testGraded  TestResult[]       @relation(name: "graded")
 }
 
 // TODO: define fields and relations
@@ -18,7 +26,9 @@ model Course {
   id            Int    @id @default(autoincrement())
   name          String
   courseDetails String
-  members       User[]
+
+  members CourseEnrollment[]
+  tests   Test[]
 }
 
 model CourseEnrollment {
@@ -27,26 +37,39 @@ model CourseEnrollment {
 
   userId   Int
   courseId Int
+  user     User   @relation(fields: [userId], references: [id])
+  course   Course @relation(fields: [courseId], references: [id])
 
-  
+  @@id([userId, courseId, role])
 }
 
-enum UserRole {
-  STUDENT
-  TEACHER
-}
-
-// TODO: define fields and relations
 model Test {
   id        Int      @id @default(autoincrement())
   updatedAt DateTime @updatedAt
   name      String
   date      DateTime
+
+  courseId    Int
+  course      Course       @relation(fields: [courseId], references: [id])
+  testResults TestResult[]
 }
 
-// TODO: define fields and relations
 model TestResult {
   id        Int      @id @default(autoincrement())
   createdAt DateTime @default(now())
   result    Int
+
+  // Relation fields
+  testId Int
+  test   Test @relation(fields: [testId], references: [id])
+
+  studentId Int
+  student   User @relation(name: "results", fields: [studentId], references: [id])
+  graderId  Int
+  gradedBy  User @relation(name: "graded", fields: [graderId], references: [id])
+}
+
+enum UserRole {
+  STUDENT
+  TEACHER
 }
