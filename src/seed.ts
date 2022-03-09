@@ -5,6 +5,8 @@ const prisma = new PrismaClient()
 
 // A `main` function so that we can use async/await
 async function main() {
+  await prisma.user.deleteMany({});
+
   const user = await prisma.user.create({
     data: {
       email: 'grace@hey.com',
@@ -17,6 +19,7 @@ async function main() {
     }
   })
 
+  console.log(user);
 }
 
 main()
