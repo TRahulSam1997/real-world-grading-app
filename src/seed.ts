@@ -19,7 +19,37 @@ async function main() {
     }
   })
 
-  console.log(user);
+  // console.log(user);
+
+  const weekFromNow = add(new Date(), { days: 7 })
+  const twoWeeksFromNow = add(new Date(), { days: 14 })
+  const monthFromNow = add(new Date(), { days: 28 })
+
+  const course = await prisma.course.create({
+    data: {
+      name: 'CRUD with Prisma in the real world',
+      courseDetails: 'Learn how to use Prisma to build a real world CRUD application',
+      tests: {
+        create: [
+          {
+            date: weekFromNow,
+            name: 'First Test'
+          },
+          {
+            date: twoWeeksFromNow,
+            name: 'Second Test'
+          },
+          {
+            date: monthFromNow,
+            name: 'Final Exam'
+          },
+        ]
+      }
+    }
+  })
+
+  console.log(course);
+
 }
 
 main()
