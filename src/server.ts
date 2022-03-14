@@ -7,6 +7,13 @@ const server: Hapi.Server = Hapi.server({
 
 
 export async function start(): Promise<Hapi.Server> {
+  server.route({
+    method: 'GET',
+    path: '/',
+    handler: async (request, h) => {
+
+    }
+  })
   await server.start()
   console.log(`Server running on ${server.info.uri}`)
   return server
