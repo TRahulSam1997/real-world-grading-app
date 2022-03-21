@@ -1,5 +1,6 @@
 import { createServer } from '../src/server'
 import Hapi from '@hapi/hapi'
+import Boom from '@hapi/boom'
 
 describe('POST /users - create user', () => {
   let server: Hapi.Server
@@ -71,3 +72,32 @@ describe('POST /users - create user', () => {
     expect(response.statusCode).toEqual(204)
   })
 })
+
+async function deleteUserHandler(
+  request: Hapi.Request,
+  h: Hapi.ResponseToolkit,
+) {
+  const { prisma } = request.server.app
+  const userId = parseInt(request.params.userId, 10)
+
+  try {
+    // Delete all enrollments
+    await prisma.$transaction([
+      prisma.token.deleteMany({
+        where: {
+          userId: userId,
+        },
+      }),
+      prisma.user.delete({
+        where: {
+          id: userId,
+        },
+      }),
+    ])
+
+    return h.response().code(204)
+  } catch (err) {
+    request.log('error', err)
+    return Boom.badImplementation('failed to delete user')
+  }
+}
