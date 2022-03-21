@@ -1,4 +1,5 @@
 import Hapi from '@hapi/hapi'
+import boom from '@hapi/boom'
 
 // plugin to instantiate Prisma Client
 const plugin: Hapi.Plugin<undefined> = {
@@ -8,8 +9,10 @@ const plugin: Hapi.Plugin<undefined> = {
       // default status endpoint
       method: 'GET',
       path: '/',
-      handler: (_, h: Hapi.ResponseToolkit) =>
-        h.response({ up: true }).code(200),
+      handler: async (request: Hapi.Request, h: Hapi.ResponseToolkit) => {
+        // return h.response({ up: true }).code(200)
+        return boom.badImplementation('Internal server error')
+      }
     })
   },
 }
