@@ -4,7 +4,7 @@
   "license": "MIT",
   "dependencies": {
     "@hapi/boom": "^9.1.0",
-    "@hapi/hapi": "^19.2.0",
+    "@hapi/hapi": "^20.2.1",
     "@hapi/joi": "^17.1.1",
     "@prisma/client": "2.4.1",
     "date-fns": "^2.15.0"
