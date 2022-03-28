@@ -5,7 +5,10 @@ import usersEnrollmentPlugin from './plugins/users-enrollment'
 import statusPlugin from './plugins/status'
 import coursesPlugin from './plugins/courses'
 import testsPlugin from './plugins/tests'
+import emailPlugin from './plugins/email'
 import testResultsPlugin from './plugins/test-results'
+import hapiAuthJwt2 from 'hapi-auth-jwt2'
+import authPlugin from './plugins/auth'
 
 const server: Hapi.Server = Hapi.server({
   port: process.env.PORT || 3000,
@@ -14,6 +17,9 @@ const server: Hapi.Server = Hapi.server({
 
 export async function createServer(): Promise<Hapi.Server> {
   await server.register([
+    hapiAuthJwt2,
+    authPlugin,
+    emailPlugin,
     statusPlugin,
     usersPlugin,
     usersEnrollmentPlugin,
