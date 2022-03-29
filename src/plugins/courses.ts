@@ -1,6 +1,9 @@
 import Hapi from '@hapi/hapi'
-import Joi from '@hapi/joi'
-import Boom from '@hapi/boom'
+import Joi, { required } from 'joi'
+import Boom, { boomify } from '@hapi/boom'
+import { API_AUTH_STATEGY } from './auth'
+import { UserRole } from '@prisma/client'
+import { isTeacherOfCourseOrAdmin } from '../auth-helpers'
 
 const coursesPlugin = {
   name: 'app/courses',
@@ -12,6 +15,10 @@ const coursesPlugin = {
         path: '/courses/{courseId}',
         handler: getCourseHandler,
         options: {
+          auth: {
+            mode: 'required',
+            strategy: API_AUTH_STATEGY,
+          },
           validate: {
             params: Joi.object({
               courseId: Joi.number().integer(),
@@ -27,12 +34,22 @@ const coursesPlugin = {
         method: 'GET',
         path: '/courses',
         handler: getCoursesHandler,
+        options: {
+          auth: {
+            mode: 'required',
+            strategy: API_AUTH_STATEGY,
+          },
+        },
       },
       {
         method: 'POST',
         path: '/courses',
         handler: createCourseHandler,
         options: {
+          auth: {
+            mode: 'required',
+            strategy: API_AUTH_STATEGY,
+          },
           validate: {
             payload: createCourseValidator,
             failAction: (request, h, err) => {
@@ -47,6 +64,11 @@ const coursesPlugin = {
         path: '/courses/{courseId}',
         handler: updateCourseHandler,
         options: {
+          pre: [isTeacherOfCourseOrAdmin],
+          auth: {
+            mode: 'required',
+            strategy: API_AUTH_STATEGY,
+          },
           validate: {
             params: Joi.object({
               courseId: Joi.number().integer(),
@@ -64,6 +86,11 @@ const coursesPlugin = {
         path: '/courses/{courseId}',
         handler: deleteCourseHandler,
         options: {
+          pre: [isTeacherOfCourseOrAdmin],
+          auth: {
+            mode: 'required',
+            strategy: API_AUTH_STATEGY,
+          },
           validate: {
             params: Joi.object({
               courseId: Joi.number().integer(),
@@ -108,7 +135,7 @@ async function getCourseHandler(
   const courseId = parseInt(request.params.courseId, 10)
 
   try {
-    const course = await prisma.course.findOne({
+    const course = await prisma.course.findUnique({
       where: {
         id: courseId,
       },
@@ -122,7 +149,7 @@ async function getCourseHandler(
       return h.response(course).code(200)
     }
   } catch (err) {
-    console.log(err)
+    request.log('error', err)
     return Boom.badImplementation('failed to get course')
   }
 }
@@ -141,7 +168,7 @@ async function getCoursesHandler(
     })
     return h.response(courses).code(200)
   } catch (err) {
-    console.log(err)
+    request.log('error', err)
     return Boom.badImplementation('failed to get course')
   }
 }
@@ -152,17 +179,29 @@ async function createCourseHandler(
 ) {
   const { prisma } = request.server.app
   const payload = request.payload as CourseInput
+  const { userId } = request.auth.credentials
 
   try {
+    // when creating a course make the authenticated user a teacher of the course
     const createdCourse = await prisma.course.create({
       data: {
         name: payload.name,
         courseDetails: payload.courseDetails,
+        members: {
+          create: {
+            role: 'TEACHER',
+            user: {
+              connect: {
+                id: userId,
+              },
+            },
+          },
+        },
       },
     })
     return h.response(createdCourse).code(201)
   } catch (err) {
-    console.log(err)
+    request.log('error', err)
     return Boom.badImplementation('failed to create course')
   }
 }
@@ -184,7 +223,7 @@ async function updateCourseHandler(
     })
     return h.response(updatedCourse).code(200)
   } catch (err) {
-    console.log(err)
+    request.log('error', err)
     return Boom.badImplementation('failed to update course')
   }
 }
@@ -197,14 +236,22 @@ async function deleteCourseHandler(
   const courseId = parseInt(request.params.courseId, 10)
 
   try {
-    await prisma.course.delete({
-      where: {
-        id: courseId,
-      },
-    })
+    // Delete all enrollments
+    await prisma.$transaction([
+      prisma.courseEnrollment.deleteMany({
+        where: {
+          courseId: courseId,
+        },
+      }),
+      prisma.course.delete({
+        where: {
+          id: courseId,
+        },
+      }),
+    ])
     return h.response().code(204)
   } catch (err) {
-    console.log(err)
+    request.log('error', err)
     return Boom.badImplementation('failed to delete course')
   }
 }
